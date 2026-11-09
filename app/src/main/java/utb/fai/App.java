@@ -31,6 +31,14 @@ public class App {
 			 * Zde zpracujte dalí parametry - maxDepth a debugLevel
 			 */
 
+			int maxDepth;
+			if (args.length >= 2) {
+				maxDepth = Integer.parseInt(args[1]);
+			} else{
+				maxDepth = 0;
+			}
+
+
 			ParserCallback callBack = new ParserCallback(visitedURIs, foundURIs);
 			ParserDelegator parser = new ParserDelegator();
 
