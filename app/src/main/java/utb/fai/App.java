@@ -3,9 +3,7 @@
  */
 package utb.fai;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
+
 import java.net.URI;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -14,10 +12,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
-import javax.swing.text.html.parser.ParserDelegator;
 
 public class App {
 
@@ -52,23 +47,36 @@ public class App {
 
 
 			ParserCallback callBack = new ParserCallback(visitedURIs, foundURIs, maxDepth);
-			ParserDelegator parser = new ParserDelegator();
 
 			while (!foundURIs.isEmpty()) {
 				URIinfo URIinfo = foundURIs.removeFirst();
 				callBack.depth = URIinfo.depth;
 				callBack.pageURI = uri = URIinfo.uri;
 				System.err.println("Analyzing " + uri);
-				try {
-					BufferedReader reader = new BufferedReader(new InputStreamReader(uri.toURL().openStream()));
-					parser.parse(reader, callBack, true);
-					reader.close();
-				} catch (FileNotFoundException e) {
-					System.err.println("Error loading page - does it exist?");
+
+
+				HttpRequest request = HttpRequest.newBuilder()
+					.uri(uri)
+					.build();
+
+				HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+				if (response.statusCode() == 200) {
+					String html = response.body();
+
+					if (html != null) {
+						Document doc = Jsoup.parse(html, uri.toString());
+						callBack.parseDocument(doc);
+
+						System.out.println("Title: " + doc.title());
+					}
+				} else {
+					System.err.println("Error: " + response.statusCode());
 				}
+
 			}
 		} catch (Exception e) {
-			System.err.println("Zachycena neoetøená výjimka, konèíme...");
+			System.err.println("Unhandled error occured...");
 			e.printStackTrace();
 		}
 	}
