@@ -9,6 +9,13 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import javax.swing.text.html.parser.ParserDelegator;
 
@@ -19,27 +26,32 @@ public class App {
 		HashSet<URI> visitedURIs = new HashSet<URI>();
 		URI uri;
 		try {
-			uri = new URI(args[0] + "/");
-			foundURIs.add(new URIinfo(uri, 0));
-			visitedURIs.add(uri);
 
 			if (args.length < 1) {
 				System.err.println("Missing parameter - start URL");
 				return;
 			}
+
+			HttpClient client = HttpClient.newBuilder()
+				.followRedirects(HttpClient.Redirect.NORMAL)
+				.build();
+
+			uri = new URI(args[0]);
+			foundURIs.add(new URIinfo(uri, 0));
+			visitedURIs.add(uri);
+
 			/**
 			 * Zde zpracujte dalí parametry - maxDepth a debugLevel
 			 */
 
-			int maxDepth;
+			int maxDepth = 2;
+
 			if (args.length >= 2) {
 				maxDepth = Integer.parseInt(args[1]);
-			} else{
-				maxDepth = 0;
 			}
 
 
-			ParserCallback callBack = new ParserCallback(visitedURIs, foundURIs);
+			ParserCallback callBack = new ParserCallback(visitedURIs, foundURIs, maxDepth);
 			ParserDelegator parser = new ParserDelegator();
 
 			while (!foundURIs.isEmpty()) {

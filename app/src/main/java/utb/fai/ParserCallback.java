@@ -30,7 +30,8 @@ class ParserCallback extends HTMLEditorKit.ParserCallback {
     /**
      * depth bude obsahovat aktuální hloubku zanoření
      */
-    int depth = 0, maxDepth = 5;
+    int depth = 0;
+    int maxDepth;
 
     /**
      * visitedURLs je množina všech URL, které jsme již navtívili
@@ -49,10 +50,11 @@ class ParserCallback extends HTMLEditorKit.ParserCallback {
     /** pokud debugLevel>1, budeme vypisovat debugovací hlášky na std. error */
     int debugLevel = 0;
 
-    ParserCallback(HashSet<URI> visitedURIs, LinkedList<URIinfo> foundURIs) {
-        this.foundURIs = foundURIs;
-        this.visitedURIs = visitedURIs;
-    }
+    ParserCallback(HashSet<URI> visitedURIs, LinkedList<URIinfo> foundURIs, int maxDepth) {
+    this.foundURIs = foundURIs;
+    this.visitedURIs = visitedURIs;
+    this.maxDepth = maxDepth;
+}
 
     /**
      * metoda handleSimpleTag se volá např. u značky <FRAME>
