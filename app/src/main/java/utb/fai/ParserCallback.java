@@ -3,6 +3,7 @@ package utb.fai;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.HashMap;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -59,10 +60,39 @@ class ParserCallback {
     public void parseDocument(Document doc) {
         Elements links = doc.select("a[href]");
 
+        String text = doc.body().text();
+        String[] words = text
+            .toLowerCase()
+            .replaceAll("(?<!\\p{L})['’]|['’](?!\\p{L})", " ")
+            .replaceAll("[^\\p{L}\\p{N}'’]+", " ")
+            .trim()
+            .split("\\s+");
+        System.out.println("Number of words: " + words.length);
+
+        HashMap<String, Integer> wordCounts = new HashMap<>();
+
+        for (String word : words) {
+            wordCounts.put(word, wordCounts.getOrDefault(word, 0) + 1);
+        }
+        System.out.println(wordCounts);
+
         for (Element link : links) {
             String href = link.attr("href");
 
-            System.out.println("Found link: " + href);
+            try {
+                URI uri = pageURI.resolve(href);
+
+                if (depth < maxDepth && !uri.isOpaque() && !visitedURIs.contains(uri)) {
+                    visitedURIs.add(uri);
+                    foundURIs.add(new URIinfo(uri, depth + 1));
+
+                    if (debugLevel > 0) {
+                        System.err.println("Adding URI: " + uri);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Incorrect URI: " + href);
+            }
         }
     }
 }
