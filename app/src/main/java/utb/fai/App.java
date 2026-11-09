@@ -40,13 +40,18 @@ public class App {
 			 */
 
 			int maxDepth = 2;
+			int debugLevel = 0;
 
 			if (args.length >= 2) {
 				maxDepth = Integer.parseInt(args[1]);
 			}
 
+			if (args.length >= 3) {
+				debugLevel = Integer.parseInt(args[2]);
+			}
 
-			ParserCallback callBack = new ParserCallback(visitedURIs, foundURIs, maxDepth);
+
+			ParserCallback callBack = new ParserCallback(visitedURIs, foundURIs, maxDepth, debugLevel);
 
 			while (!foundURIs.isEmpty()) {
 				URIinfo URIinfo = foundURIs.removeFirst();
@@ -75,6 +80,8 @@ public class App {
 				}
 
 			}
+			System.out.println(callBack.wordCounts);
+			
 		} catch (Exception e) {
 			System.err.println("Unhandled error occured...");
 			e.printStackTrace();

@@ -50,11 +50,13 @@ class ParserCallback {
 
     /** pokud debugLevel>1, budeme vypisovat debugovací hlášky na std. error */
     int debugLevel = 0;
+    HashMap<String, Integer> wordCounts = new HashMap<>();
 
-    ParserCallback(HashSet<URI> visitedURIs, LinkedList<URIinfo> foundURIs, int maxDepth) {
+    ParserCallback(HashSet<URI> visitedURIs, LinkedList<URIinfo> foundURIs, int maxDepth, int debugLevel) {
     this.foundURIs = foundURIs;
     this.visitedURIs = visitedURIs;
     this.maxDepth = maxDepth;
+    this.debugLevel = debugLevel;
     }
 
     public void parseDocument(Document doc) {
@@ -69,12 +71,9 @@ class ParserCallback {
             .split("\\s+");
         System.out.println("Number of words: " + words.length);
 
-        HashMap<String, Integer> wordCounts = new HashMap<>();
-
         for (String word : words) {
             wordCounts.put(word, wordCounts.getOrDefault(word, 0) + 1);
         }
-        System.out.println(wordCounts);
 
         for (Element link : links) {
             String href = link.attr("href");
