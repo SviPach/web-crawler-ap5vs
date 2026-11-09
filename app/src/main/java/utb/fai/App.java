@@ -4,14 +4,20 @@
 package utb.fai;
 
 
-import java.net.URI;
+
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Map;
+
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+
 
 
 public class App {
@@ -80,8 +86,17 @@ public class App {
 				}
 
 			}
-			System.out.println(callBack.wordCounts);
-			
+
+			ArrayList<Map.Entry<String, Integer>> sortedWords = new ArrayList<>(callBack.wordCounts.entrySet());
+			sortedWords.sort(
+				(a, b) -> b.getValue().compareTo(a.getValue())
+			);
+
+			for (int i = 0; i < Math.min(20, sortedWords.size()); i++) {
+				Map.Entry<String, Integer> entry = sortedWords.get(i);
+				System.out.println(entry.getKey() + ";" + entry.getValue());
+			}
+
 		} catch (Exception e) {
 			System.err.println("Unhandled error occured...");
 			e.printStackTrace();
