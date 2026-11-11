@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.HashMap;
+import java.util.Set;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -39,7 +40,7 @@ class ParserCallback {
      * (parsovali). Pokud najdeme na stránce URL, který je v této množině,
      * nebudeme jej u dále parsovat
      */
-    HashSet<URI> visitedURIs;
+    Set<URI> visitedURIs;
 
     /**
      * foundURLs jsou všechna nová (zatím nenavštívená) URL, která na stránce
@@ -52,7 +53,7 @@ class ParserCallback {
     int debugLevel = 0;
     HashMap<String, Integer> wordCounts = new HashMap<>();
 
-    ParserCallback(HashSet<URI> visitedURIs, LinkedList<URIinfo> foundURIs, int maxDepth, int debugLevel) {
+    ParserCallback(Set<URI> visitedURIs, LinkedList<URIinfo> foundURIs, int maxDepth, int debugLevel) {
     this.foundURIs = foundURIs;
     this.visitedURIs = visitedURIs;
     this.maxDepth = maxDepth;

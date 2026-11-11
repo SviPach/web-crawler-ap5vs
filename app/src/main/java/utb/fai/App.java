@@ -9,11 +9,17 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+
+import java.io.ByteArrayInputStream;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -24,7 +30,7 @@ public class App {
 
 	public static void main(String[] args) {
 		LinkedList<URIinfo> foundURIs = new LinkedList<URIinfo>();
-		HashSet<URI> visitedURIs = new HashSet<URI>();
+		Set<URI> visitedURIs = ConcurrentHashMap.newKeySet();
 		URI uri;
 		try {
 
@@ -36,6 +42,8 @@ public class App {
 			HttpClient client = HttpClient.newBuilder()
 				.followRedirects(HttpClient.Redirect.NORMAL)
 				.build();
+
+			ExecutorService executor = Executors.newFixedThreadPool(4);
 
 			uri = new URI(args[0]);
 			foundURIs.add(new URIinfo(uri, 0));
@@ -70,13 +78,29 @@ public class App {
 					.uri(uri)
 					.build();
 
-				HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+				HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
 
 				if (response.statusCode() == 200) {
-					String html = response.body();
+					byte[] html = response.body();
+
+					String contentType = response
+						.headers()
+						.firstValue("Content-Type")
+						.orElse("");
+
+					String charset = null;
+
+					for (String part : contentType.split(";")) {
+						part = part.trim();
+
+						if (part.toLowerCase().startsWith("charset=")) {
+							charset = part.substring("charset=".length()).trim();
+							break;
+						}
+					}
 
 					if (html != null) {
-						Document doc = Jsoup.parse(html, uri.toString());
+						Document doc = Jsoup.parse(new ByteArrayInputStream(html), charset, uri.toString());
 						callBack.parseDocument(doc);
 
 						System.out.println("Title: " + doc.title());
