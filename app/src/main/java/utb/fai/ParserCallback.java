@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -47,18 +49,21 @@ class ParserCallback {
      * najdeme. Poté, co projdeme celou stránku, budeme z tohoto seznamu
      * jednotlivá URL brát a zpracovávat.
      */
-    LinkedList<URIinfo> foundURIs;
+    Queue<URIinfo> foundURIs;
 
     /** pokud debugLevel>1, budeme vypisovat debugovací hlášky na std. error */
     int debugLevel = 0;
-    HashMap<String, Integer> wordCounts = new HashMap<>();
+    ConcurrentHashMap<String, Integer> wordCounts;
 
-    ParserCallback(Set<URI> visitedURIs, LinkedList<URIinfo> foundURIs, int maxDepth, int debugLevel) {
+    ParserCallback(Set<URI> visitedURIs, Queue<URIinfo> foundURIs, int maxDepth, int debugLevel, URI pageURI, int depth, ConcurrentHashMap<String, Integer> wordCounts) {
     this.foundURIs = foundURIs;
     this.visitedURIs = visitedURIs;
     this.maxDepth = maxDepth;
     this.debugLevel = debugLevel;
-    }
+    this.pageURI = pageURI;
+    this.depth = depth;
+    this.wordCounts = wordCounts;
+}
 
     public void parseDocument(Document doc) {
         Elements links = doc.select("a[href]");
@@ -73,7 +78,7 @@ class ParserCallback {
         System.out.println("Number of words: " + words.length);
 
         for (String word : words) {
-            wordCounts.put(word, wordCounts.getOrDefault(word, 0) + 1);
+            wordCounts.merge(word, 1, Integer::sum);
         }
 
         for (Element link : links) {
@@ -82,8 +87,7 @@ class ParserCallback {
             try {
                 URI uri = pageURI.resolve(href);
 
-                if (depth < maxDepth && !uri.isOpaque() && !visitedURIs.contains(uri)) {
-                    visitedURIs.add(uri);
+                if (depth < maxDepth && !uri.isOpaque() && visitedURIs.add(uri)) {
                     foundURIs.add(new URIinfo(uri, depth + 1));
 
                     if (debugLevel > 0) {

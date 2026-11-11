@@ -13,6 +13,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -29,7 +31,7 @@ import org.jsoup.nodes.Document;
 public class App {
 
 	public static void main(String[] args) {
-		LinkedList<URIinfo> foundURIs = new LinkedList<URIinfo>();
+		Queue<URIinfo> foundURIs = new ConcurrentLinkedQueue<>();
 		Set<URI> visitedURIs = ConcurrentHashMap.newKeySet();
 		URI uri;
 		try {
@@ -65,53 +67,61 @@ public class App {
 			}
 
 
-			ParserCallback callBack = new ParserCallback(visitedURIs, foundURIs, maxDepth, debugLevel);
+			ConcurrentHashMap<String, Integer> wordCounts = new ConcurrentHashMap<>();
+
 
 			while (!foundURIs.isEmpty()) {
-				URIinfo URIinfo = foundURIs.removeFirst();
-				callBack.depth = URIinfo.depth;
-				callBack.pageURI = uri = URIinfo.uri;
-				System.err.println("Analyzing " + uri);
+				URIinfo URIinfo = foundURIs.poll();
 
+				ParserCallback callBack = new ParserCallback(
+					visitedURIs, foundURIs, maxDepth, debugLevel,
+					URIinfo.uri, URIinfo.depth, wordCounts);
 
-				HttpRequest request = HttpRequest.newBuilder()
-					.uri(uri)
-					.build();
+				executor.submit(() -> {
+					URI pageURI = URIinfo.uri;
+    				System.err.println("Analyzing " + pageURI);
 
-				HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+					HttpRequest request = HttpRequest.newBuilder()
+						.uri(pageURI)
+						.build();
 
-				if (response.statusCode() == 200) {
-					byte[] html = response.body();
+					HttpResponse<byte[]> response =
+						client.send(request, HttpResponse.BodyHandlers.ofByteArray());
 
-					String contentType = response
-						.headers()
-						.firstValue("Content-Type")
-						.orElse("");
+					if (response.statusCode() == 200) {
+						byte[] html = response.body();
 
-					String charset = null;
+						String contentType = response.headers()
+							.firstValue("Content-Type")
+							.orElse("");
 
-					for (String part : contentType.split(";")) {
-						part = part.trim();
+						String charset = null;
 
-						if (part.toLowerCase().startsWith("charset=")) {
-							charset = part.substring("charset=".length()).trim();
-							break;
+						for (String part : contentType.split(";")) {
+							part = part.trim();
+
+							if (part.toLowerCase().startsWith("charset=")) {
+								charset = part.substring("charset=".length()).trim();
+								break;
+							}
+						}
+
+						if (html != null) {
+							Document doc = Jsoup.parse(
+								new ByteArrayInputStream(html),
+								charset,
+								pageURI.toString()
+							);
+
+							callBack.parseDocument(doc);
+
+							System.out.println("Title: " + doc.title());
 						}
 					}
-
-					if (html != null) {
-						Document doc = Jsoup.parse(new ByteArrayInputStream(html), charset, uri.toString());
-						callBack.parseDocument(doc);
-
-						System.out.println("Title: " + doc.title());
-					}
-				} else {
-					System.err.println("Error: " + response.statusCode());
-				}
-
+				});
 			}
 
-			ArrayList<Map.Entry<String, Integer>> sortedWords = new ArrayList<>(callBack.wordCounts.entrySet());
+			ArrayList<Map.Entry<String, Integer>> sortedWords = new ArrayList<>(wordCounts.entrySet());
 			sortedWords.sort(
 				(a, b) -> b.getValue().compareTo(a.getValue())
 			);
