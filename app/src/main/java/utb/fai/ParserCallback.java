@@ -1,8 +1,6 @@
 package utb.fai;
 
 import java.net.URI;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.Queue;
@@ -75,7 +73,7 @@ class ParserCallback {
             .replaceAll("[^\\p{L}\\p{N}'’]+", " ")
             .trim()
             .split("\\s+");
-        System.out.println("Number of words: " + words.length);
+        System.err.println("Number of words: " + words.length);
 
         for (String word : words) {
             wordCounts.merge(word, 1, Integer::sum);

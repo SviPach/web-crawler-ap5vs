@@ -5,8 +5,6 @@
 
 
 
-	import java.util.HashSet;
-	import java.util.LinkedList;
 	import java.util.ArrayList;
 	import java.util.Map;
 	import java.util.concurrent.ExecutorService;
@@ -49,6 +47,13 @@
 				ExecutorService executor = Executors.newFixedThreadPool(4);
 
 				uri = new URI(args[0]);
+
+				if (uri.getScheme() == null ||
+					(!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https"))) {
+					System.err.println("Invalid URL. Use http:// or https://");
+					return;
+				}
+
 				foundURIs.add(new URIinfo(uri, 0));
 				visitedURIs.add(uri);
 
@@ -60,8 +65,19 @@
 				int debugLevel = 0;
 
 				if (args.length >= 2) {
+				try {
 					maxDepth = Integer.parseInt(args[1]);
+
+					if (maxDepth < 0) {
+						System.err.println("maxDepth cannot be negative");
+						return;
+					}
+
+				} catch (NumberFormatException e) {
+					System.err.println("Invalid maxDepth. Please enter a number.");
+					return;
 				}
+			}
 
 				if (args.length >= 3) {
 					debugLevel = Integer.parseInt(args[2]);
@@ -120,7 +136,7 @@
 
 									callBack.parseDocument(doc);
 
-									System.out.println("Title: " + doc.title());
+									System.err.println("Title: " + doc.title());
 								}
 							} 
 						} catch (Exception e) {
